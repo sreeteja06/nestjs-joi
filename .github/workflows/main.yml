@@ -1,23 +1,35 @@
-name: CI
+# this name shows up on the GitHub Actions badge
+name: test
 
 on:
   push:
     branches:
-        - master
+      - '**'
+    tags:
+      - '**'
+      # Version tags have their own workflow
+      - '!v*'
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    name: build, test and publish npm package
+    strategy:
+      matrix:
+        node: [ '10', '12', '14', '16' ]
+    name: test on node ${{ matrix.node }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - uses: actions/setup-node@v1
+      - name: Setup node
+        uses: actions/setup-node@v2
         with:
-          node-version: '12'
+          node-version: ${{ matrix.node }}
       - run: npm install
-      - run: npm run test:once
-      - name: Coveralls
+      - name: Unit tests
+        run: npm run test:unit:once
+      - name: API tests
+        run: npm run test:api:once
+      - name: Coveralls (unit tests)
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
